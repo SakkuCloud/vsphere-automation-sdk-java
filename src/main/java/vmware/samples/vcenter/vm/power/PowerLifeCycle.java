@@ -12,6 +12,7 @@
  */
 package vmware.samples.vcenter.vm.power;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -29,9 +30,10 @@ import vmware.samples.vcenter.helpers.VmHelper;
  * Author: VMware, Inc.
  * Sample Prerequisites: The sample needs an existing VM
  */
-public class PowerLifeCycle extends SamplesAbstractBase{
+public class PowerLifeCycle extends SamplesAbstractBase {
 
     private String vmName;
+    private String action;
     private Power vmPowerService;
     private String vmId;
 
@@ -39,16 +41,24 @@ public class PowerLifeCycle extends SamplesAbstractBase{
     protected void parseArgs(String[] args) {
         // Parse the command line options or use config file
         Option vmNameOption = Option.builder()
-            .longOpt("vmname")
-            .desc("Name of the VM on which the power operations"
-            		+ " would be performed")
-            .required(true)
-            .hasArg()
-            .argName("VM NAME")
-            .build();
-        List<Option> optionList = Collections.singletonList(vmNameOption);
+                .longOpt("vmname")
+                .desc("Name of the VM on which the power operations"
+                        + " would be performed")
+                .required(true)
+                .hasArg()
+                .argName("VM NAME")
+                .build();
+        Option actionOption = Option.builder()
+                .longOpt("action")
+                .desc("Power operations action")
+                .required(true)
+                .hasArg()
+                .argName("ACTION")
+                .build();
+        List<Option> optionList = Arrays.asList(vmNameOption, actionOption);
         super.parseArgs(optionList, args);
-        this.vmName =  (String) parsedOptions.get("vmname");
+        this.vmName = (String) parsedOptions.get("vmname");
+        this.action = (String) parsedOptions.get("action");
     }
 
     @Override
@@ -57,9 +67,9 @@ public class PowerLifeCycle extends SamplesAbstractBase{
                 sessionStubConfig,
                 vmName);
         System.out.println("Using VM: " + vmName + " (vmId="
-            + this.vmId + " ) for Power Operations sample.");
+                + this.vmId + " ) for Power Operations sample.");
         this.vmPowerService = this.vapiAuthHelper.getStubFactory().createStub(
-                Power.class, this.sessionStubConfig); 
+                Power.class, this.sessionStubConfig);
     }
 
     @Override
@@ -68,32 +78,33 @@ public class PowerLifeCycle extends SamplesAbstractBase{
         System.out.println("# Example: Get current vm power state");
         PowerTypes.Info powerInfo = this.vmPowerService.get(vmId);
 
-        // Power off the vm if it is on
-        if (PowerTypes.State.POWERED_ON.equals(powerInfo.getState()))
-        {
-            System.out.println("# Example: VM is powered on, power it off");
+//        // Power off the vm if it is on
+//        if (PowerTypes.State.POWERED_ON.equals(powerInfo.getState())) {
+//            System.out.println("# Example: VM is powered on, power it off");
+//            this.vmPowerService.stop(vmId);
+//        }
+
+        if (action.equalsIgnoreCase("start")) {
+            //Power on the vm
+            System.out.println("# Example: Power on the vm");
+            this.vmPowerService.start(vmId);
+            System.out.println("vm.power->start()");
+        } else if (action.equalsIgnoreCase("suspend")) {
+            //Suspend the vm
+            System.out.println("# Example: Suspend the vm");
+            this.vmPowerService.suspend(vmId);
+            System.out.println("vm.power->suspend()");
+        } else if (action.equalsIgnoreCase("stop")) {
+            //Resume the vm
+            System.out.println("# Example: Stop the vm");
             this.vmPowerService.stop(vmId);
+            System.out.println("vm.power->stop()");
+        } else if (action.equalsIgnoreCase("reset")) {
+            //Reset the vm
+            System.out.println("# Example: Reset the vm");
+            this.vmPowerService.reset(vmId);
+            System.out.println("vm.power->reset()");
         }
-
-        //Power on the vm
-        System.out.println("# Example: Power on the vm");
-        this.vmPowerService.start(vmId);
-        System.out.println("vm.power->start()");
-
-        //Suspend the vm
-        System.out.println("# Example: Suspend the vm");
-        this.vmPowerService.suspend(vmId);
-        System.out.println("vm.power->suspend()" );
-
-        //Resume the vm
-        System.out.println("# Example: Resume the vm");
-        this.vmPowerService.start(vmId);
-        System.out.println("vm.power->resume()");
-
-        //Reset the vm
-        System.out.println("# Example: Reset the vm");
-        this.vmPowerService.reset(vmId);
-        System.out.println("vm.power->reset()");
     }
 
     @Override
@@ -105,16 +116,14 @@ public class PowerLifeCycle extends SamplesAbstractBase{
         PowerTypes.Info powerInfo = this.vmPowerService.get(vmId);
 
         //Power off the vm if it is on
-        if (PowerTypes.State.POWERED_OFF.equals(powerInfo.getState()))
-        {
-            System.out.println("VM is powered off" );
-        }
-        else {
-            System.out.println("vm.Power Warning: Could not power off vm" );
+        if (PowerTypes.State.POWERED_OFF.equals(powerInfo.getState())) {
+            System.out.println("VM is powered off");
+        } else {
+            System.out.println("vm.Power Warning: Could not power off vm");
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void power(String[] args) throws Exception {
         /*
          * Execute the sample using the command line arguments or parameters
          * from the configuration file. This executes the following steps:
